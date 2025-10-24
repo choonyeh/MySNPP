@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>home1</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background: #fffe80;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+  }
+
+  .content-img {
+    max-width: 90%;
+    width: 90%;
+    height: auto;
+    display: block;
+    margin-bottom: 20px;
+    border-radius: 10px;
+  }
+
+  /* slideshow wrapper places arrows outside the image and centers vertically */
+  .slideshow-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;   
+    align-items: center;       
+    gap: 2px;                 
+    margin-bottom: 20px;
+    padding: 0 2px;
+  }
+
+  /* the slideshow (image container) */
+  .slideshow {
+    flex: 0 0 84%;            
+    max-width: 1200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 10px;
+    background: transparent;
+  }
+
+  .slideshow img {
+    width: 90%;
+    height: auto;
+    display: none;
+    border-radius: 10px;
+    transition: opacity 0.35s ease-in-out;
+  }
+
+  .slideshow img.active {
+    display: block;
+    opacity: 1;
+  }
+
+  /* arrow buttons (outside the image) */
+  .arrow {
+    flex: 0 0 auto;
+    width: 44px;              /* fixed dimensions */
+    height: 44px;
+    line-height: 44px;        /* center glyph vertically */
+    text-align: center;
+    background-color: rgba(64,183,255,0.95);
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s, transform 0.08s;
+    user-select: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 5;
+  }
+
+  .arrow:active { transform: translateY(1px); }
+
+  .arrow:hover { background-color: rgba(0,64,102,0.95); }
+
+
+/* Mobile ≤ 360px */
+@media (max-width: 360px) {
+    .slideshow { flex: 1 1 auto; width:100%;max-width:100%;}
+    .slideshow-wrapper { gap: 0; padding: 0; }
+    .arrow { width: 28px; height: 28px; line-height: 28px; font-size: 0.8rem; }
+    .slideshow img { width: 94%; }
+}
+/* Tablet ≤ 768px */
+@media (max-width: 768px) {
+    .slideshow { flex: 1 1 auto; width:100%;max-width:100%; }
+    .slideshow-wrapper { gap: 0; padding: 0; }
+    .arrow { width: 32px; height: 32px; line-height: 32px; font-size: 0.9rem; }
+    .content-img { width: 95%; }
+    .slideshow img { width: 96%; }
+}
+
+</style>
+</head>
+<body>
+
+  <div class="slideshow-wrapper">
+    <button class="arrow left" aria-label="Previous image">&#10094;</button>
+    <div class="slideshow" aria-live="polite">
+      <img src="show1.png" class="active" alt="Image 1">
+      <img src="show2.png" alt="Image 2">
+      <img src="show3.png" alt="Image 3">
+    </div>
+    <button class="arrow right" aria-label="Next image">&#10095;</button>
+  </div>
+
+
+  <img class="content-img" src="home1.png" alt="Home Image">
+  <img class="content-img" src="intro1.png" alt="Intro 1">
+  <img class="content-img" src="intro2.png" alt="Intro 2">
+
+<script>
+(function () {
+  function getDocHeight() {
+    return Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight
+    );
+  }
+
+  function sendHeight() {
+    try {
+      const h = getDocHeight();
+      parent.postMessage({ type: 'iframeHeight', height: h }, '*');
+    } catch (e) {}
+  }
+
+  window.addEventListener('load', () => {
+    const imgs = Array.from(document.images || []);
+    if (imgs.length === 0) {
+      sendHeight();
+      return;
+    }
+    let loaded = 0;
+    imgs.forEach(img => {
+      if (img.complete) loaded++;
+      else {
+        img.addEventListener('load', () => { loaded++; if (loaded === imgs.length) sendHeight(); });
+        img.addEventListener('error', () => { loaded++; if (loaded === imgs.length) sendHeight(); });
+      }
+    });
+    if (loaded === imgs.length) sendHeight();
+  });
+
+  window.addEventListener('message', (ev) => {
+    const d = ev.data || {};
+    if (d.type === 'requestHeight') sendHeight();
+  });
+})();
+
+/* ============================
+   Manual navigation for slideshow
+   (query DOM after elements exist)
+============================ */
+document.addEventListener('DOMContentLoaded', () => {
+  const slides = Array.from(document.querySelectorAll('.slideshow img'));
+  const leftBtn = document.querySelector('.arrow.left');
+  const rightBtn = document.querySelector('.arrow.right');
+  let currentIndex = 0;
+
+  function showSlide(index) {
+    slides.forEach((img, i) => {
+      img.classList.toggle('active', i === index);
+    });
+    // Inform parent to recompute iframe height after change (small delay)
+    setTimeout(() => {
+      try {
+        const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        parent.postMessage({ type: 'iframeHeight', height: h }, '*');
+      } catch (e) {}
+    }, 50);
+  }
+
+  leftBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+    showSlide(currentIndex);
+  });
+
+  rightBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % slides.length;
+    showSlide(currentIndex);
+  });
+
+  // keyboard support
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') leftBtn.click();
+    if (e.key === 'ArrowRight') rightBtn.click();
+  });
+});
+
+</script>
+
+
+</body>
+</html>
