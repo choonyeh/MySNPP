@@ -6,7 +6,7 @@
 }
 
 body {
-  font-family: sans-serif;
+  font-family: "Century Gothic", "Apple Gothic", sans-serif;
   line-height: 1.6;
   color: #1a1a1a;
   background-color: #fffe80;
@@ -177,4 +177,5 @@ main { flex: 1 0 auto; display: block; }
     font-size: 1.5rem;
   }
 }
+
 
